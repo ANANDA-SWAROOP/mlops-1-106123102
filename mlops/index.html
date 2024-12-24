@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat-Dog Image Classifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-y-auto min-h-screen">
+
+    <!-- Hero Section -->
+    <header class="bg-emerald-600 py-16">
+        <div class="container mx-auto text-center">
+            <h1 class="text-5xl font-bold text-white">🐱🐶 Cat-Dog Image Classifier</h1>
+            <p class="mt-4 text-lg text-gray-200">Upload an image or use your webcam to identify if it's a cat or dog!</p>
+        </div>
+    </header>
+
+    <main id="app-container" class="py-12">
+        <div class="container mx-auto px-4 overflow-hidden">
+            <div id="content-section" class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+
+                <!-- Upload and Camera Section -->
+                <section id="upload-section" class="bg-gray-800 rounded-lg shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6">📤 Upload or Capture Your Image</h2>
+
+                    <!-- Drop Area -->
+                    <div id="drop-area" class="border-2 border-dashed border-emerald-400 rounded-lg p-8 cursor-pointer hover:bg-gray-700 transition-all mb-4">
+                        <p class="text-gray-300 mb-3">Drag and drop an image here</p>
+                        <p class="text-sm text-gray-400 mb-5 font-bold">or</p>
+                        <label for="file-input" class="cursor-pointer bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                            Browse Image
+                        </label>
+                        <input type="file" id="file-input" accept="image/*" class="hidden">
+                    </div>
+
+                    <!-- Button to Switch to Camera -->
+                    <button id="show-camera-btn" class="bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                        Open Camera
+                    </button>
+
+
+                    <div class="mb-4 mt-5">
+                        <label for="model" class="block text-gray-300 font-bold mb-2">Choose a Model</label>
+                        <select name="model" id="model" class="bg-gray-700 text-gray-300 border border-gray-600 rounded-3xl px-4 py-2 focus:ring-emerald-500 focus:border-emerald-500 hover:bg-gray-600 transition-all w-auto">
+                            <option value="finetune1" class="text-white">Finetunex </option>
+                            <option value="finetune2" class="text-white">Finetunex2</option>
+                            <option value="hugface1" class="text-white">Hugface1</option>
+                        </select>
+                    </div>
+
+
+                    <!-- <form id="upload-form">
+                        <select id="model-select" name="model">
+                            <option value="finetune1">Finetune Model 1</option>
+                            <option value="finetune2">Finetune Model 2</option>
+                            <option value="hugface1">Hugging Face Model</option>
+                        </select>
+                    </form> -->
+
+
+                    <!-- Camera Container -->
+                    <div id="camera-container" class="hidden mt-6">
+                        <video id="webcam" autoplay class="rounded-lg shadow-lg w-full"></video>
+                        <div class="mt-4 flex justify-between">
+                            <button id="capture-btn" class="bg-emerald-500 px-4 py-2 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                                Capture Image
+                            </button>
+                            <button id="close-camera-btn" class="bg-red-500 px-4 py-2 rounded-lg text-white hover:bg-red-600 transition-all">
+                                Close Camera
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- Captured or Uploaded Image Section -->
+                <section id="image-preview-section" class="bg-gray-800 rounded-lg shadow-lg p-8 hidden">
+                    <h2 class="text-2xl font-bold mb-6">📸 Captured or Uploaded Image</h2>
+                    <div id="preview-frame" class="relative">
+                        <!-- Loading Spinner -->
+                        <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center hidden">
+                            <div class="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <img id="preview-image" alt="Preview" class="rounded-lg shadow-lg hidden">
+                    </div>
+                    <p id="result-text" class="text-center text-2xl font-bold mt-12 hidden "></p>
+                    <div id="confirm-retake" class="flex justify-between mt-4">
+                        <button id="confirm-image-btn" class="bg-emerald-500 px-4 py-2 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                            Confirm
+                        </button>
+                        <button id="retake-image-btn" class="bg-gray-500 px-4 py-2 rounded-lg text-white hover:bg-gray-600 transition-all">
+                            Retake Image
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Camera functionality
+        const webcam = document.getElementById('webcam');
+        const previewFrame = document.getElementById('preview-frame');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const previewImage = document.getElementById('preview-image');
+        const resultText = document.getElementById('result-text');
+
+        const showCameraBtn = document.getElementById('show-camera-btn');
+        const closeCameraBtn = document.getElementById('close-camera-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        const confirmImageBtn = document.getElementById('confirm-image-btn');
+        const retakeImageBtn = document.getElementById('retake-image-btn');
+
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const confirmRetake = document.getElementById('confirm-retake');
+        let cameraStream;
+
+        // Access the user's camera
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = cameraStream;
+                document.getElementById('camera-container').classList.remove('hidden');
+                document.getElementById('image-preview-section').classList.add('hidden');
+                previewImage.classList.add('hidden');
+                resultText.classList.add('hidden');
+            } catch (error) {
+                console.error('Error accessing the camera:', error);
+                alert('Unable to access the camera.');
+            }
+        }
+
+        // Stop the camera
+        function stopCamera() {
+            if (cameraStream) {
+                const tracks = cameraStream.getTracks();
+                tracks.forEach(track => track.stop());
+                webcam.srcObject = null;
+                cameraStream = null;
+            }
+        }
+
+        // Show the camera container
+        showCameraBtn.addEventListener('click', () => {
+            startCamera();
+        });
+
+        // Hide the camera container
+        closeCameraBtn.addEventListener('click', () => {
+            stopCamera();
+            document.getElementById('camera-container').classList.add('hidden');
+        });
+
+        // Capture the image
+        captureBtn.addEventListener('click', () => {
+            if (!webcam.srcObject) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = webcam.videoWidth;
+            canvas.height = webcam.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+
+            previewImage.src = canvas.toDataURL('image/png');
+            previewImage.classList.remove('hidden');
+            document.getElementById('image-preview-section').classList.remove('hidden');
+            document.getElementById('camera-container').classList.add('hidden');
+
+            // Stop the camera after capturing
+            stopCamera();
+        });
+
+        // Handle file input (Upload image)
+        fileInput.addEventListener('change', function () {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function () {
+                        previewImage.src = img.src;
+                        resultText.textContent = " ";
+                        confirmImageBtn.classList.remove('hidden')
+                        previewImage.classList.remove('hidden');
+                        document.getElementById('image-preview-section').classList.remove('hidden');
+                    };
+                };
+                reader.readAsDataURL(file);
+                fileInput.value = '';
+            }
+        });
+
+confirmImageBtn.addEventListener('click', async () => {
+    // Disable buttons and show loading state
+    confirmImageBtn.classList.replace('bg-emerald-500', 'bg-blue-400');
+    // confirmImageBtn.classList.add('cursor-not-allowed');
+    loadingSpinner.classList.remove('hidden');
+    previewImage.classList.add('hidden');
+    
+    // Convert the image preview to a Blob using canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = document.getElementById('preview-image');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    confirmImageBtn.classList.add('hidden')
+
+    // Convert the canvas image to a Blob
+    canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'image.png');
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/predict/', {
+                method: 'POST',
+                body: formData,
+            });
+            const result = await response.json();
+
+            // Hide the spinner and display result
+            confirmImageBtn.classList.add('hidden');
+            loadingSpinner.classList.add('hidden');
+            resultText.textContent = `category is ${result.category}`; // Display the result (Cat/Dog/Unknown)
+            resultText.classList.remove('hidden');
+        } catch (error) {
+            loadingSpinner.classList.add('hidden');
+            resultText.textContent = 'Error processing the image.';
+            resultText.classList.remove('hidden');
+        }
+    }, 'image/png');  // Set the image type as PNG
+});
+
+
+// Retake the image
+retakeImageBtn.addEventListener('click', () => {
+    document.getElementById('image-preview-section').classList.add('hidden');
+    resultText.textContent = '';
+    resultText.classList.add('hidden');
+    previewImage.classList.add('hidden');
+
+    // Re-enable the buttons and restore their original appearance
+    confirmImageBtn.disabled = false;
+    retakeImageBtn.disabled = false;
+    confirmImageBtn.classList.replace('bg-gray-400', 'bg-emerald-500'); // Restore color
+    confirmImageBtn.classList.remove('hidden'); // Restore cursor
+    retakeImageBtn.classList.replace('bg-gray-400', 'bg-gray-500'); // Restore color
+    retakeImageBtn.classList.remove('cursor-not-allowed'); // Restore cursor
+    startCamera();
+});
+    </script>
+
+</body>
+</html>
