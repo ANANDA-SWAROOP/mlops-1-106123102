@@ -21,9 +21,9 @@ app.add_middleware(
 
 # Define the model paths
 MODEL_PATHS = {
-    "Finetunex": r"models/model_full.pth",
-    "Finetunex2": r"models/model_full2.pth",
-    "Hugface1": r"models/model_full3.pth",
+    "Finetunex": r"backend/models/model_full.pth",
+    "Finetunex2": r"backend/models/model_full2.pth",
+    "Hugface1": r"backend/models/model_full3.pth",
 }
 
 # Define image preprocessing
