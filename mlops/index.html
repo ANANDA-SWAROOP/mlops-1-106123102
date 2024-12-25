@@ -17,11 +17,12 @@
     <header class="bg-emerald-600 py-16">
         <div class="container mx-auto text-center">
             <h1 class="text-5xl font-bold text-white">🐱🐶 Cat-Dog Image Classifier</h1>
-            <p class="mt-4 text-lg text-gray-200">Upload an image or use your webcam to identify if it's a cat or dog!</p>
+            <p class="mt-4 text-2xl text-gray-200">Upload an image or use your webcam to identify if it's a cat or dog!</p>
+            <p id="process" class="mt-4 text-2xl text-gray-200">start by capturing image or uploading it!!!!</p>
         </div>
     </header>
 
-    <main id="app-container" class="py-12">
+    <main id="app-container" class="py-16">
         <div class="container mx-auto px-4 overflow-hidden">
             <div id="content-section" class="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
@@ -31,38 +32,28 @@
 
                     <!-- Drop Area -->
                     <div id="drop-area" class="border-2 border-dashed border-emerald-400 rounded-lg p-8 cursor-pointer hover:bg-gray-700 transition-all mb-4">
-                        <p class="text-gray-300 mb-3">Drag and drop an image here</p>
-                        <p class="text-sm text-gray-400 mb-5 font-bold">or</p>
-                        <label for="file-input" class="cursor-pointer bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                        <p class="text-gray-300 mb-3 text-xl font-semibold">Drag and drop an image here</p>
+                        <p class=" text-white mb-5 font-bold text-xl">or</p>
+                        <label for="file-input" class="cursor-pointer bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all font-semibold text-xl">
                             Browse Image
                         </label>
                         <input type="file" id="file-input" accept="image/*" class="hidden">
                     </div>
 
                     <!-- Button to Switch to Camera -->
-                    <button id="show-camera-btn" class="bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                    <button id="show-camera-btn" class="bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all text-xl font-bold">
                         Open Camera
                     </button>
 
 
                     <div class="mb-4 mt-5">
-                        <label for="model" class="block text-gray-300 font-bold mb-2">Choose a Model</label>
-                        <select name="model" id="model" class="bg-gray-700 text-gray-300 border border-gray-600 rounded-3xl px-4 py-2 focus:ring-emerald-500 focus:border-emerald-500 hover:bg-gray-600 transition-all w-auto">
-                            <option value="finetune1" class="text-white">Finetunex </option>
-                            <option value="finetune2" class="text-white">Finetunex2</option>
-                            <option value="hugface1" class="text-white">Hugface1</option>
+                        <label for="model" class="block text-gray-300 font-bold mb-2 text-xl">Choose a Model</label>
+                        <select name="model" id="model" class="bg-emerald-500 text-gray-300 text-xl font-bold border border-gray-600 rounded-lg px-5 py-3 focus:ring-yellow-500 focus:border-yellow-500 hover:bg-gray-600 transition-all w-auto">
+                            <option value="Finetunex" class="text-white">Finetunex </option>
+                            <option value="Finetunex2" class="text-white">Finetunex2</option>
+                            <option value="Hugface1" class="text-white">Hugface1</option>
                         </select>
                     </div>
-
-
-                    <!-- <form id="upload-form">
-                        <select id="model-select" name="model">
-                            <option value="finetune1">Finetune Model 1</option>
-                            <option value="finetune2">Finetune Model 2</option>
-                            <option value="hugface1">Hugging Face Model</option>
-                        </select>
-                    </form> -->
-
 
                     <!-- Camera Container -->
                     <div id="camera-container" class="hidden mt-6">
@@ -88,10 +79,9 @@
                             <div class="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                         
-                        <!-- Image Preview -->
                         <img id="preview-image" alt="Preview" class="rounded-lg shadow-lg hidden">
                     </div>
-                    <p id="result-text" class="text-center text-2xl font-bold mt-12 hidden "></p>
+                    <p id="result-text" class="text-center text-3xl font-bold mt-10 hidden text-yellow-400 "></p>
                     <div id="confirm-retake" class="flex justify-between mt-4">
                         <button id="confirm-image-btn" class="bg-emerald-500 px-4 py-2 rounded-lg text-white hover:bg-emerald-600 transition-all">
                             Confirm
@@ -107,7 +97,6 @@
     </main>
 
     <script>
-        // Camera functionality
         const webcam = document.getElementById('webcam');
         const previewFrame = document.getElementById('preview-frame');
         const loadingSpinner = document.getElementById('loading-spinner');
@@ -125,7 +114,6 @@
         const confirmRetake = document.getElementById('confirm-retake');
         let cameraStream;
 
-        // Access the user's camera
         async function startCamera() {
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -140,7 +128,6 @@
             }
         }
 
-        // Stop the camera
         function stopCamera() {
             if (cameraStream) {
                 const tracks = cameraStream.getTracks();
@@ -150,18 +137,15 @@
             }
         }
 
-        // Show the camera container
         showCameraBtn.addEventListener('click', () => {
             startCamera();
         });
 
-        // Hide the camera container
         closeCameraBtn.addEventListener('click', () => {
             stopCamera();
             document.getElementById('camera-container').classList.add('hidden');
         });
 
-        // Capture the image
         captureBtn.addEventListener('click', () => {
             if (!webcam.srcObject) return;
 
@@ -175,88 +159,123 @@
             previewImage.classList.remove('hidden');
             document.getElementById('image-preview-section').classList.remove('hidden');
             document.getElementById('camera-container').classList.add('hidden');
-
-            // Stop the camera after capturing
             stopCamera();
+            confirmImageBtn.classList.remove('hidden')
         });
 
-        // Handle file input (Upload image)
-        fileInput.addEventListener('change', function () {
-            const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function () {
-                        previewImage.src = img.src;
-                        resultText.textContent = " ";
-                        confirmImageBtn.classList.remove('hidden')
-                        previewImage.classList.remove('hidden');
-                        document.getElementById('image-preview-section').classList.remove('hidden');
-                    };
-                };
-                reader.readAsDataURL(file);
-                fileInput.value = '';
+//mod
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.add('hover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.remove('hover'), false);
+            });
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
-        });
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                const file = files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function () {
+                            previewImage.src = img.src;
+                            resultText.textContent = " ";
+                            confirmImageBtn.classList.remove('hidden');
+                            previewImage.classList.remove('hidden');
+                            document.getElementById('image-preview-section').classList.remove('hidden');
+                        };
+                    };
+                    reader.readAsDataURL(file);
+                    fileInput.value = '';
+                }
+            }
+
+            fileInput.addEventListener('change', function () {
+                handleFiles(fileInput.files);
+            });
+
 
 confirmImageBtn.addEventListener('click', async () => {
-    // Disable buttons and show loading state
     confirmImageBtn.classList.replace('bg-emerald-500', 'bg-blue-400');
-    // confirmImageBtn.classList.add('cursor-not-allowed');
     loadingSpinner.classList.remove('hidden');
-    previewImage.classList.add('hidden');
-    
-    // Convert the image preview to a Blob using canvas
+
+  
+    const modelSelect = document.getElementById('model');
+    const selectedModel = modelSelect.value; 
+
+   
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = document.getElementById('preview-image');
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-    confirmImageBtn.classList.add('hidden')
+    confirmImageBtn.classList.add('hidden');
 
-    // Convert the canvas image to a Blob
     canvas.toBlob(async (blob) => {
         const formData = new FormData();
-        formData.append('file', blob, 'image.png');
+        formData.append('file', blob, 'image.png'); 
+        formData.append('model', selectedModel);   
 
         try {
             const response = await fetch('http://127.0.0.1:8000/predict/', {
                 method: 'POST',
                 body: formData,
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
             const result = await response.json();
 
-            // Hide the spinner and display result
             confirmImageBtn.classList.add('hidden');
             loadingSpinner.classList.add('hidden');
-            resultText.textContent = `category is ${result.category}`; // Display the result (Cat/Dog/Unknown)
+            resultText.textContent = `Its a ${result.category}, using ${result.model}`;
             resultText.classList.remove('hidden');
         } catch (error) {
+            console.error(error);
             loadingSpinner.classList.add('hidden');
             resultText.textContent = 'Error processing the image.';
             resultText.classList.remove('hidden');
         }
-    }, 'image/png');  // Set the image type as PNG
+    }, 'image/png');
 });
 
 
-// Retake the image
+
 retakeImageBtn.addEventListener('click', () => {
     document.getElementById('image-preview-section').classList.add('hidden');
     resultText.textContent = '';
     resultText.classList.add('hidden');
     previewImage.classList.add('hidden');
 
-    // Re-enable the buttons and restore their original appearance
     confirmImageBtn.disabled = false;
     retakeImageBtn.disabled = false;
-    confirmImageBtn.classList.replace('bg-gray-400', 'bg-emerald-500'); // Restore color
-    confirmImageBtn.classList.remove('hidden'); // Restore cursor
-    retakeImageBtn.classList.replace('bg-gray-400', 'bg-gray-500'); // Restore color
-    retakeImageBtn.classList.remove('cursor-not-allowed'); // Restore cursor
+    confirmImageBtn.classList.replace('bg-gray-400', 'bg-emerald-500'); 
+    confirmImageBtn.classList.remove('hidden'); 
+    retakeImageBtn.classList.replace('bg-gray-400', 'bg-gray-500'); 
+    retakeImageBtn.classList.remove('cursor-not-allowed');
     startCamera();
 });
     </script>
