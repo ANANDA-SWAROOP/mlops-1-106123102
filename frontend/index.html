@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat-Dog Image Classifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-y-auto min-h-screen">
+
+    <!-- Hero Section -->
+    <header class="bg-emerald-600 py-16">
+        <div class="container mx-auto text-center">
+            <h1 class="text-5xl font-bold text-white">🐱🐶 Cat-Dog Image Classifier</h1>
+            <p class="mt-4 text-2xl text-gray-200">Upload an image or use your webcam to identify if it's a cat or dog!</p>
+            <p id="process" class="mt-4 text-2xl text-gray-200">start by capturing image or uploading it!!!!</p>
+        </div>
+    </header>
+
+    <main id="app-container" class="py-16">
+        <div class="container mx-auto px-4 overflow-hidden">
+            <div id="content-section" class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+
+                <!-- Upload and Camera Section -->
+                <section id="upload-section" class="bg-gray-800 rounded-lg shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6">📤 Upload or Capture Your Image</h2>
+
+                    <!-- Drop Area -->
+                    <div id="drop-area" class="border-2 border-dashed border-emerald-400 rounded-lg p-8 cursor-pointer hover:bg-gray-700 transition-all mb-4">
+                        <p class="text-gray-300 mb-3 text-xl font-semibold">Drag and drop an image here</p>
+                        <p class=" text-white mb-5 font-bold text-xl">or</p>
+                        <label for="file-input" class="cursor-pointer bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all font-semibold text-xl">
+                            Browse Image
+                        </label>
+                        <input type="file" id="file-input" accept="image/*" class="hidden">
+                    </div>
+
+                    <!-- Button to Switch to Camera -->
+                    <button id="show-camera-btn" class="bg-emerald-500 px-6 py-3 rounded-lg text-white hover:bg-emerald-600 transition-all text-xl font-bold">
+                        Open Camera
+                    </button>
+
+
+                    <div class="mb-4 mt-5">
+                        <label for="model" class="block text-gray-300 font-bold mb-2 text-xl">Choose a Model</label>
+                        <select name="model" id="model" class="bg-emerald-500 text-gray-300 text-xl font-bold border border-gray-600 rounded-lg px-5 py-3 focus:ring-yellow-500 focus:border-yellow-500 hover:bg-gray-600 transition-all w-auto">
+                            <option value="Finetunex" class="text-white">Finetunex </option>
+                            <option value="Finetunex2" class="text-white">Finetunex2</option>
+                            <option value="Hugface1" class="text-white">Hugface1</option>
+                        </select>
+                    </div>
+
+                    <!-- Camera Container -->
+                    <div id="camera-container" class="hidden mt-6">
+                        <video id="webcam" autoplay class="rounded-lg shadow-lg w-full"></video>
+                        <div class="mt-4 flex justify-between">
+                            <button id="capture-btn" class="bg-emerald-500 px-4 py-2 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                                Capture Image
+                            </button>
+                            <button id="close-camera-btn" class="bg-red-500 px-4 py-2 rounded-lg text-white hover:bg-red-600 transition-all">
+                                Close Camera
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- Captured or Uploaded Image Section -->
+                <section id="image-preview-section" class="bg-gray-800 rounded-lg shadow-lg p-8 hidden">
+                    <h2 class="text-2xl font-bold mb-6">📸 Captured or Uploaded Image</h2>
+                    <div id="preview-frame" class="relative">
+                        <!-- Loading Spinner -->
+                        <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center hidden">
+                            <div class="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        
+                        <img id="preview-image" alt="Preview" class="rounded-lg shadow-lg hidden">
+                    </div>
+                    <p id="result-text" class="text-center text-3xl font-bold mt-10 hidden text-yellow-400 "></p>
+                    <div id="confirm-retake" class="flex justify-between mt-4">
+                        <button id="confirm-image-btn" class="bg-emerald-500 px-4 py-2 rounded-lg text-white hover:bg-emerald-600 transition-all">
+                            Confirm
+                        </button>
+                        <button id="retake-image-btn" class="bg-gray-500 px-4 py-2 rounded-lg text-white hover:bg-gray-600 transition-all">
+                            Retake Image
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const webcam = document.getElementById('webcam');
+        const previewFrame = document.getElementById('preview-frame');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const previewImage = document.getElementById('preview-image');
+        const resultText = document.getElementById('result-text');
+
+        const showCameraBtn = document.getElementById('show-camera-btn');
+        const closeCameraBtn = document.getElementById('close-camera-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        const confirmImageBtn = document.getElementById('confirm-image-btn');
+        const retakeImageBtn = document.getElementById('retake-image-btn');
+
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const confirmRetake = document.getElementById('confirm-retake');
+        let cameraStream;
+
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = cameraStream;
+                document.getElementById('camera-container').classList.remove('hidden');
+                document.getElementById('image-preview-section').classList.add('hidden');
+                previewImage.classList.add('hidden');
+                resultText.classList.add('hidden');
+            } catch (error) {
+                console.error('Error accessing the camera:', error);
+                alert('Unable to access the camera.');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                const tracks = cameraStream.getTracks();
+                tracks.forEach(track => track.stop());
+                webcam.srcObject = null;
+                cameraStream = null;
+            }
+        }
+
+        showCameraBtn.addEventListener('click', () => {
+            startCamera();
+        });
+
+        closeCameraBtn.addEventListener('click', () => {
+            stopCamera();
+            document.getElementById('camera-container').classList.add('hidden');
+        });
+
+        captureBtn.addEventListener('click', () => {
+            if (!webcam.srcObject) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = webcam.videoWidth;
+            canvas.height = webcam.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+
+            previewImage.src = canvas.toDataURL('image/png');
+            previewImage.classList.remove('hidden');
+            document.getElementById('image-preview-section').classList.remove('hidden');
+            document.getElementById('camera-container').classList.add('hidden');
+            stopCamera();
+            confirmImageBtn.classList.remove('hidden')
+        });
+
+//mod
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.add('hover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.remove('hover'), false);
+            });
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                const file = files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function () {
+                            previewImage.src = img.src;
+                            resultText.textContent = " ";
+                            confirmImageBtn.classList.remove('hidden');
+                            previewImage.classList.remove('hidden');
+                            document.getElementById('image-preview-section').classList.remove('hidden');
+                        };
+                    };
+                    reader.readAsDataURL(file);
+                    fileInput.value = '';
+                }
+            }
+
+            fileInput.addEventListener('change', function () {
+                handleFiles(fileInput.files);
+            });
+
+
+confirmImageBtn.addEventListener('click', async () => {
+    confirmImageBtn.classList.replace('bg-emerald-500', 'bg-blue-400');
+    loadingSpinner.classList.remove('hidden');
+
+  
+    const modelSelect = document.getElementById('model');
+    const selectedModel = modelSelect.value; 
+
+   
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = document.getElementById('preview-image');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    confirmImageBtn.classList.add('hidden');
+
+    canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'image.png'); 
+        formData.append('model', selectedModel);   
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/predict/', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            confirmImageBtn.classList.add('hidden');
+            loadingSpinner.classList.add('hidden');
+            resultText.textContent = `Its a ${result.category}, using ${result.model}`;
+            resultText.classList.remove('hidden');
+        } catch (error) {
+            console.error(error);
+            loadingSpinner.classList.add('hidden');
+            resultText.textContent = 'Error processing the image.';
+            resultText.classList.remove('hidden');
+        }
+    }, 'image/png');
+});
+
+
+
+retakeImageBtn.addEventListener('click', () => {
+    document.getElementById('image-preview-section').classList.add('hidden');
+    resultText.textContent = '';
+    resultText.classList.add('hidden');
+    previewImage.classList.add('hidden');
+
+    confirmImageBtn.disabled = false;
+    retakeImageBtn.disabled = false;
+    confirmImageBtn.classList.replace('bg-gray-400', 'bg-emerald-500'); 
+    confirmImageBtn.classList.remove('hidden'); 
+    retakeImageBtn.classList.replace('bg-gray-400', 'bg-gray-500'); 
+    retakeImageBtn.classList.remove('cursor-not-allowed');
+    // startCamera();
+});
+    </script>
+
+</body>
+</html>
