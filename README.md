@@ -6,8 +6,7 @@ description:
 welcome to the cat dog classifier project
 
 
-# Project Title
-
+# CNN based Cat-dog-Image Classifier
 Please follow the give instructions
 
 1.clone the code into your favorite text editor
